@@ -49,6 +49,10 @@ void MainWindow::initGame()
     //初始化随机数生成器，设置种子
     init_randomGenerator();
 
+    //添加背景
+    QPixmap pix(":/icons/background.png");
+    ui->label->setPixmap(pix);
+
     //加载模版图案
     //创建15个模版按钮
     modelGroup = new QButtonGroup();
@@ -56,6 +60,10 @@ void MainWindow::initGame()
 
     // 随机生成关卡中需要的元素
     levelGroup = new QButtonGroup();
+
+    //重新开始按钮disable
+    ui->remake->setDisabled(1);
+    ui->beginGameBtn->setDisabled(0);
 }
 
 MainWindow::~MainWindow()
@@ -281,6 +289,9 @@ void MainWindow::on_beginGameBtn_clicked()
         MyButton *btn=(MyButton *)levelGroup->buttons().at(i);
         setPictureByStatus(btn);
     }
+    //禁用开始按钮，解禁重新开始按钮
+    ui->beginGameBtn->setDisabled(1);
+    ui->remake->setDisabled(0);
 }
 
 //载入模板元素
@@ -377,4 +388,29 @@ void MainWindow::init_randomGenerator()
 {
     quint32 seed = quint32(QDateTime::currentDateTime().toMSecsSinceEpoch());
     this->generator.seed(seed);
+}
+
+void MainWindow::on_remake_clicked()
+{
+    // 将关卡元素随机分配到空间中
+    this->distribution_element(0);
+    //根据是否可点击设置添加的元素颜色
+    for (int i = 0 ; i < levelGroup->buttons().size(); i ++)
+    {
+        //根据是否可点击设置颜色
+        MyButton *btn=(MyButton *)levelGroup->buttons().at(i);
+        setPictureByStatus(btn);
+    }
+
+    //清空消除槽内容
+    if(deleteBtnList!=nullptr)
+    {
+        int listSize=deleteBtnList->size();
+        for(int i=0;i<listSize;i++)
+        {
+            deleteBtnList->at(0)->setParent(NULL);
+            deleteBtnList->removeAt(0);
+        }
+    }
+
 }

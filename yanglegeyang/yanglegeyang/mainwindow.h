@@ -60,6 +60,9 @@ public slots:
     void addToDeleteSlot(QAbstractButton *);
     void on_beginGameBtn_clicked();
 
+private slots:
+    void on_remake_clicked();
+
 private:
     Ui::MainWindow *ui;
 
