@@ -64,6 +64,9 @@ void MainWindow::initGame()
     //重新开始按钮disable
     ui->remake->setDisabled(1);
     ui->beginGameBtn->setDisabled(0);
+
+    Diffculty = 3;
+    DeletedNum = 0;
 }
 
 MainWindow::~MainWindow()
@@ -152,15 +155,13 @@ void MainWindow::removeSame()
                 continue;
             }
         }
-        if(sum==3)
+        if(sum==Diffculty)
         {
             //remove
-            deleteBtnList->at(i)->setParent(NULL);
-            deleteBtnList->removeAt(i);
-            deleteBtnList->at(i)->setParent(NULL);
-            deleteBtnList->removeAt(i);
-            deleteBtnList->at(i)->setParent(NULL);
-            deleteBtnList->removeAt(i);
+            for(int tmp_int = 0; tmp_int < Diffculty; tmp_int++){
+                deleteBtnList->at(i)->setParent(NULL);
+                deleteBtnList->removeAt(i);
+            }
             break;
         }
         else
@@ -186,8 +187,39 @@ void MainWindow::addToDeleteSlot(QAbstractButton *aBtn)
     ui->deleteWidget->show();
     addToDeleteWidget((MyButton*)btn);
 
+    DeletedNum++;
+
     //重新计算是否可以被点击及样式
     setSideBtn(current_btn_point);
+
+    //判断面版上是否有元素
+    if (DeletedNum - 1 == AllElementNum)
+    {
+        //新建弹窗
+        QDialog  dialog;
+        dialog.setWindowTitle(tr("闯关成功"));
+        QDialogButtonBox *button = new QDialogButtonBox(&dialog);
+        button->addButton( "再玩一次", QDialogButtonBox::YesRole);
+        button->addButton( "退出游戏", QDialogButtonBox::NoRole);
+        //点击再试一次
+        connect(button, SIGNAL(accepted()), &dialog, SLOT(accept()));
+        //点击退出游戏
+        connect(button, SIGNAL(rejected()), &dialog, SLOT(reject()));
+
+        QVBoxLayout *layout = new QVBoxLayout;
+        layout->addWidget( button);
+        dialog.setLayout(layout);
+
+        QString suffix ;
+        if ( dialog.exec() == QDialog::Accepted)
+        {
+            initGame();
+        }
+        else
+        {
+            this->close();
+        }
+    }
 }
 
 //根据位置关系 判断是否可点击
@@ -280,6 +312,8 @@ void MainWindow::setSideBtn(QPoint current_btn_point)
 //点击开始按钮
 void MainWindow::on_beginGameBtn_clicked()
 {
+    choose_Diffculty();
+
     // 将关卡元素随机分配到空间中
     this->distribution_element(0);
     //根据是否可点击设置添加的元素颜色
@@ -337,6 +371,9 @@ void MainWindow::distribution_element(int level)
         int max_element = array.size();
         max_element = max_element  - max_element % 3;
 
+        AllElementNum = max_element;
+
+
         //随机生成三个一组的按钮
         for(int i=0; i < max_element / 3; i ++)
         {
@@ -392,6 +429,8 @@ void MainWindow::init_randomGenerator()
 
 void MainWindow::on_remake_clicked()
 {
+    choose_Diffculty();
+
     // 将关卡元素随机分配到空间中
     this->distribution_element(0);
     //根据是否可点击设置添加的元素颜色
@@ -414,3 +453,35 @@ void MainWindow::on_remake_clicked()
     }
 
 }
+
+void MainWindow::choose_Diffculty()
+{
+    //新建弹窗
+    QDialog  dialog;
+    dialog.setWindowTitle(tr("选择难度"));
+    QDialogButtonBox *button_1 = new QDialogButtonBox(&dialog);
+    QDialogButtonBox *button_2 = new QDialogButtonBox(&dialog);
+
+    button_1->addButton( "easy", QDialogButtonBox::YesRole);
+    button_2->addButton( "hard", QDialogButtonBox::NoRole);
+    //easy
+    connect(button_1, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    //hard
+    connect(button_2, SIGNAL(rejected()), &dialog, SLOT(reject()));
+
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget( button_1);
+    layout->addWidget( button_2);
+    dialog.setLayout(layout);
+
+    QString suffix ;
+    if ( dialog.exec() == QDialog::Accepted)
+    {
+        Diffculty = 3;
+    }
+    else
+    {
+       Diffculty = 4;
+    }
+}
+

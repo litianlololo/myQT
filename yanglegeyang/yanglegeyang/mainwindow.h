@@ -20,6 +20,13 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    int Diffculty;//选择难度，easy：三个相同可消除，hard：四个相同可消除
+    int DeletedNum;//已经进入消除槽的元素数量
+    int AllElementNum;//所有元素数量
+
+    void choose_Diffculty();
+
+public:
     MainWindow(QWidget *parent = nullptr);
 
     QButtonGroup *modelGroup;          // 用于存放模板元素，
