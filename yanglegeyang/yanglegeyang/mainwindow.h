@@ -8,12 +8,15 @@
 #include <QDateTime>
 #include <QImage>
 #include<QtWidgets>
+#include<QSettings>
+#include <QString>
+#include <QDebug>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
-
+#define TIMEOUT 1 *1000
 
 class MainWindow : public QMainWindow
 {
@@ -24,6 +27,8 @@ public:
     int DeletedNum;//已经进入消除槽的元素数量
     int AllElementNum;//所有元素数量
 
+    QTimer *timer;
+    int timeShow=0;
     void choose_Diffculty();
 
 public:
@@ -34,6 +39,7 @@ public:
     QList<MyButton*> *deleteBtnList;   // 用于存放消除区的元素
     QRandomGenerator generator;        // 随机数产生器
 
+    int DataNum=0;
     void initGame();
     //添加到下面消除窗口
     void addToDeleteWidget(MyButton *btn);
@@ -60,6 +66,13 @@ public:
 
     void setSideBtn(QPoint current_btn_point);
 
+    //展示排行榜
+    void showRanking();
+
+    //写入新成绩
+    void WRNewData();
+    //快速排序
+    void QuickSort(int *arr,int num);
 
     ~MainWindow();
 public slots:
@@ -69,6 +82,8 @@ public slots:
 
 private slots:
     void on_remake_clicked();
+
+    void timeoutSlot();
 
 private:
     Ui::MainWindow *ui;

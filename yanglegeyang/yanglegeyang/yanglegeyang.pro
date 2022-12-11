@@ -36,8 +36,10 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 DISTFILES += \
+    Data.ini \
     json/level_1.json \
     json/level_2.json
 
 RESOURCES += \
+    dataini.qrc \
     new.qrc

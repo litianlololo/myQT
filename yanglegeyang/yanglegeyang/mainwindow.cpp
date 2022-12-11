@@ -9,6 +9,9 @@
 #include <QJsonParseError>
 #include <QDir>
 #include <QDialogButtonBox>
+#include <QTimer>
+
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -18,11 +21,17 @@ MainWindow::MainWindow(QWidget *parent)
     levelGroup=nullptr;     //界面中存在的元素
     deleteBtnList=nullptr;  //被选中待消除的元素
     modelGroup=nullptr;     //模板元素
+
+    timer = new QTimer;
+    //定时器时间到
+    connect(timer,&QTimer::timeout,this,&MainWindow::timeoutSlot);
+
     initGame();
 }
 
 void MainWindow::initGame()
 {
+
     //两个if都是重新初始化
     if(levelGroup!=nullptr)
     {
@@ -60,6 +69,9 @@ void MainWindow::initGame()
 
     // 随机生成关卡中需要的元素
     levelGroup = new QButtonGroup();
+
+    //输出排行榜
+    showRanking();
 
     //重新开始按钮disable
     ui->remake->setDisabled(1);
@@ -189,18 +201,26 @@ void MainWindow::addToDeleteSlot(QAbstractButton *aBtn)
 
     DeletedNum++;
 
+
+
     //重新计算是否可以被点击及样式
     setSideBtn(current_btn_point);
 
     //判断面版上是否有元素
-    if (DeletedNum - 1 == AllElementNum)
+    if (DeletedNum  == AllElementNum)
     {
         //新建弹窗
         QDialog  dialog;
         dialog.setWindowTitle(tr("闯关成功"));
+
         QDialogButtonBox *button = new QDialogButtonBox(&dialog);
         button->addButton( "再玩一次", QDialogButtonBox::YesRole);
         button->addButton( "退出游戏", QDialogButtonBox::NoRole);
+
+        //更新排行榜
+        WRNewData();
+        showRanking();
+
         //点击再试一次
         connect(button, SIGNAL(accepted()), &dialog, SLOT(accept()));
         //点击退出游戏
@@ -312,6 +332,7 @@ void MainWindow::setSideBtn(QPoint current_btn_point)
 //点击开始按钮
 void MainWindow::on_beginGameBtn_clicked()
 {
+
     choose_Diffculty();
 
     // 将关卡元素随机分配到空间中
@@ -326,6 +347,11 @@ void MainWindow::on_beginGameBtn_clicked()
     //禁用开始按钮，解禁重新开始按钮
     ui->beginGameBtn->setDisabled(1);
     ui->remake->setDisabled(0);
+
+    //计数器开始
+    timeShow=0;
+    ui->timeshow->setNum(timeShow);
+    timer->start(TIMEOUT);
 }
 
 //载入模板元素
@@ -358,7 +384,7 @@ void MainWindow::distribution_element(int level)
 
         // 读取每个元素的位置
         QString path=QDir::currentPath();
-        QFile json_file(":/json/level_2.json");  //选择关卡配置文件。
+        QFile json_file(":/json/level_3.json");  //选择关卡配置文件。
         json_file.open(QIODevice::ReadOnly | QIODevice::Text);
         QString value = json_file.readAll();
         QJsonParseError error;
@@ -430,7 +456,8 @@ void MainWindow::init_randomGenerator()
 void MainWindow::on_remake_clicked()
 {
     choose_Diffculty();
-
+    timeShow=0;
+    ui->timeshow->setNum(timeShow);
     // 将关卡元素随机分配到空间中
     this->distribution_element(0);
     //根据是否可点击设置添加的元素颜色
@@ -452,6 +479,7 @@ void MainWindow::on_remake_clicked()
         }
     }
 
+    DeletedNum=0;
 }
 
 void MainWindow::choose_Diffculty()
@@ -477,7 +505,7 @@ void MainWindow::choose_Diffculty()
     QString suffix ;
     if ( dialog.exec() == QDialog::Accepted)
     {
-        Diffculty = 3;
+        Diffculty = 1;
     }
     else
     {
@@ -485,3 +513,101 @@ void MainWindow::choose_Diffculty()
     }
 }
 
+
+void MainWindow::timeoutSlot()
+{
+    timeShow+=1;
+    ui->timeshow->setNum(timeShow);
+}
+
+void MainWindow::WRNewData()
+{
+    //读取所有旧成绩
+    QSettings config(":/Data.ini",QSettings::IniFormat);
+    if(config.value("Data/num").toString()=="")
+        config.setValue("Data/num",0);
+    DataNum=config.value("Data/num").toInt();
+
+    int* TimeData;    //从0开始存储
+    TimeData=new int[DataNum+2];
+    for(int i=0; i<DataNum;i++)
+        TimeData[i]=config.value("/Data/"+QString::number(i)).toInt();
+    ++DataNum;
+    qDebug()<<DataNum<<" "<<timeShow;
+    TimeData[DataNum-1]=timeShow;
+     qDebug()<<"TimeData[DataNum]="<<TimeData[DataNum];
+    //进行升序排序（快速排序）
+    QuickSort(TimeData,DataNum);
+    qDebug()<<"\n"<<"1:"<<TimeData[0]<<"2:"<<TimeData[1]<<"3:"<<TimeData[2];
+    //写入新成绩
+    //更新数据量
+    config.setValue("/Data/num",DataNum);
+    for(int i=0;i<DataNum;i++)
+        config.setValue("/Data/"+QString::number(i),QString::number(TimeData[i]));
+    delete [] TimeData;
+
+}
+
+void MainWindow::showRanking()
+{
+    QSettings config(":/Data.ini",QSettings::IniFormat);
+    QString RankingShow="排行榜：\n";
+    DataNum=config.value("/Data/num").toInt();
+    int maxShow=DataNum;
+    if(DataNum>=6)
+        maxShow=6;
+    for(int i=0; i<maxShow;i++)
+        RankingShow+=QString::number(i+1)+"\t"+
+                        config.value("/Data/"+QString::number(i)).toString()+"\n";
+    ui->RankingLabel->setText(RankingShow);
+}
+
+//快速排序
+template<typename T>
+void Swap(T& x, T& y)
+{
+    T t;
+    t = x;
+    x = y;
+    y = t;
+    return;
+}
+int part(int arr[], int low, int high)
+{
+    int i = low, j = high, pivot = arr[low]; //基准元素
+    while (i < j)
+    {
+        while (i < j && ( arr[j] > pivot)) //从右向左开始找一个 小于等于 pivot的数值
+        {
+            j--;
+        }
+        if (i < j)
+        {
+            Swap(arr[i++], arr[j]);  //r[i]和r[j]交换后 i 向右移动一位
+        }
+        while (i < j && (arr[i] <= pivot)) //从左向右开始找一个 大于 pivot的数值
+        {
+            i++;
+        }
+        if (i < j)
+        {
+            Swap(arr[i], arr[j--]);  //r[i]和r[j]交换后 i 向左移动一位
+        }
+    }
+    return i;  //返回最终划分完成后基准元素所在的位置
+}
+void _QuickSort(int arr[], int low, int high)
+{
+    int mid;
+    if (low < high)
+    {
+        mid = part(arr, low, high);
+        _QuickSort(arr, low, mid - 1);
+        _QuickSort(arr, mid + 1, high);
+    }
+}
+void MainWindow::QuickSort(int arr[], int num)
+{
+    _QuickSort(arr, 0, num-1);
+    return;
+}
