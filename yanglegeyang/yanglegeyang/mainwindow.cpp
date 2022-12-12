@@ -207,7 +207,7 @@ void MainWindow::addToDeleteSlot(QAbstractButton *aBtn)
     setSideBtn(current_btn_point);
 
     //判断面版上是否有元素
-    if (DeletedNum  == AllElementNum)
+    if (DeletedNum   == AllElementNum)
     {
         //新建弹窗
         QDialog  dialog;
@@ -384,7 +384,7 @@ void MainWindow::distribution_element(int level)
 
         // 读取每个元素的位置
         QString path=QDir::currentPath();
-        QFile json_file(":/json/level_3.json");  //选择关卡配置文件。
+        QFile json_file(":/json/level_2.json");  //选择关卡配置文件。
         json_file.open(QIODevice::ReadOnly | QIODevice::Text);
         QString value = json_file.readAll();
         QJsonParseError error;
@@ -397,7 +397,7 @@ void MainWindow::distribution_element(int level)
         int max_element = array.size();
         max_element = max_element  - max_element % 3;
 
-        AllElementNum = max_element;
+        AllElementNum =0;
 
 
         //随机生成三个一组的按钮
@@ -412,6 +412,7 @@ void MainWindow::distribution_element(int level)
             this->levelGroup->addButton(btn2);
             this->levelGroup->addButton(btn3);
 
+             AllElementNum+=3;
         }
         //点击后消除该按钮
         connect(levelGroup,SIGNAL(buttonClicked(QAbstractButton *)),this,SLOT(addToDeleteSlot(QAbstractButton *)));
@@ -505,7 +506,7 @@ void MainWindow::choose_Diffculty()
     QString suffix ;
     if ( dialog.exec() == QDialog::Accepted)
     {
-        Diffculty = 1;
+        Diffculty = 3;
     }
     else
     {
@@ -523,7 +524,7 @@ void MainWindow::timeoutSlot()
 void MainWindow::WRNewData()
 {
     //读取所有旧成绩
-    QSettings config(":/Data.ini",QSettings::IniFormat);
+    QSettings config("./Data.ini",QSettings::IniFormat);
     if(config.value("Data/num").toString()=="")
         config.setValue("Data/num",0);
     DataNum=config.value("Data/num").toInt();
@@ -533,12 +534,9 @@ void MainWindow::WRNewData()
     for(int i=0; i<DataNum;i++)
         TimeData[i]=config.value("/Data/"+QString::number(i)).toInt();
     ++DataNum;
-    qDebug()<<DataNum<<" "<<timeShow;
     TimeData[DataNum-1]=timeShow;
-     qDebug()<<"TimeData[DataNum]="<<TimeData[DataNum];
     //进行升序排序（快速排序）
     QuickSort(TimeData,DataNum);
-    qDebug()<<"\n"<<"1:"<<TimeData[0]<<"2:"<<TimeData[1]<<"3:"<<TimeData[2];
     //写入新成绩
     //更新数据量
     config.setValue("/Data/num",DataNum);
@@ -550,7 +548,7 @@ void MainWindow::WRNewData()
 
 void MainWindow::showRanking()
 {
-    QSettings config(":/Data.ini",QSettings::IniFormat);
+    QSettings config("./Data.ini",QSettings::IniFormat);
     QString RankingShow="排行榜：\n";
     DataNum=config.value("/Data/num").toInt();
     int maxShow=DataNum;
